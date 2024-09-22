@@ -16,9 +16,7 @@ class SettingsManager {
         register_setting('lnurlp_nostr_zap_handler_options', 'lnurlp_nostr_zap_handler_lnbits_api_key');
         register_setting('lnurlp_nostr_zap_handler_options', 'lnurlp_nostr_zap_handler_nostr_private_key');
         register_setting('lnurlp_nostr_zap_handler_options', 'lnurlp_nostr_zap_handler_nostr_public_key');
-        register_setting('lnurlp_nostr_zap_handler_options', 'lnurlp_nostr_zap_handler_webhook_id');
         register_setting('lnurlp_nostr_zap_handler_options', 'lnurlp_nostr_zap_handler_nostr_relays');
-        register_setting('lnurlp_nostr_zap_handler_options', 'lnurlp_nostr_zap_handler_webhook_url');
     }
 
     public function render_settings_page() {
@@ -48,21 +46,42 @@ class SettingsManager {
                         <td><input type="text" name="lnurlp_nostr_zap_handler_nostr_public_key" value="<?php echo esc_attr(get_option('lnurlp_nostr_zap_handler_nostr_public_key')); ?>" /></td>
                     </tr>
                     <tr valign="top">
-                        <th scope="row">LNbits Webhook ID</th>
-                        <td><input type="text" name="lnurlp_nostr_zap_handler_webhook_id" value="<?php echo esc_attr(get_option('lnurlp_nostr_zap_handler_webhook_id')); ?>" /></td>
-                    </tr>
-                    <tr valign="top">
                         <th scope="row">Nostr Relays (comma-separated)</th>
                         <td><input type="text" name="lnurlp_nostr_zap_handler_nostr_relays" value="<?php echo esc_attr(implode(',', get_option('lnurlp_nostr_zap_handler_nostr_relays', array()))); ?>" /></td>
-                    </tr>
-                    <tr valign="top">
-                        <th scope="row">Webhook URL</th>
-                        <td><input type="text" name="lnurlp_nostr_zap_handler_webhook_url" value="<?php echo esc_attr(get_option('lnurlp_nostr_zap_handler_webhook_url')); ?>" size="60" /></td>
                     </tr>
                 </table>
                 <?php submit_button(); ?>
             </form>
         </div>
         <?php
+    }
+
+    public function get_setting($key, $default = '') {
+        return get_option('lnurlp_nostr_zap_handler_' . $key, $default);
+    }
+
+    public function update_setting($key, $value) {
+        update_option('lnurlp_nostr_zap_handler_' . $key, $value);
+    }
+
+    public function get_all_settings() {
+        return [
+            'lnbits_api_url' => $this->get_setting('lnbits_api_url', 'https://legend.lnbits.com'),
+            'lnbits_api_key' => $this->get_setting('lnbits_api_key', ''),
+            'nostr_private_key' => $this->get_setting('nostr_private_key', ''),
+            'nostr_public_key' => $this->get_setting('nostr_public_key', ''),
+            'webhook_secret' => $this->get_setting('webhook_secret', $this->generate_random_string(32)),
+            'nostr_relays' => $this->get_setting('nostr_relays', ['wss://relay.damus.io', 'wss://nostr-pub.wellorder.net']),
+        ];
+    }
+
+    private function generate_random_string($length = 32) {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+        return $randomString;
     }
 }

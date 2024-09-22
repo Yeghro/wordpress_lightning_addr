@@ -1,17 +1,16 @@
 <?php
 
 class ZapRequestHandler {
-    private $database_manager;
     private $invoice_generator;
     private $nostr_event_handler;
 
     public function __construct() {
-        $this->database_manager = new DatabaseManager();
         $this->invoice_generator = new InvoiceGenerator();
         $this->nostr_event_handler = new NostrEventHandler();
     }
 
     public function handle_lnurlp_request() {
+        check_ajax_referer('lnurlp_request_nonce', 'nonce');
         $lightning_address = isset($_GET['lightning_address']) ? sanitize_text_field($_GET['lightning_address']) : '';
         
         if (empty($lightning_address)) {
@@ -30,6 +29,7 @@ class ZapRequestHandler {
     }
 
     public function handle_zap_request() {
+        check_ajax_referer('zap_request_nonce', 'nonce');
         $amount = isset($_POST['amount']) ? intval($_POST['amount']) : 0;
         $nostr_event = isset($_POST['nostr']) ? sanitize_text_field($_POST['nostr']) : '';
 
@@ -58,13 +58,10 @@ class ZapRequestHandler {
                 'bolt11' => $invoice['payment_request']
             );
 
-            $insert_id = $this->store_zap_request($zap_request_data);
+            // Remove the store_zap_request call
+            // $insert_id = $this->store_zap_request($zap_request_data);
 
-            if (!$insert_id) {
-                throw new Exception('Failed to store zap request');
-            }
-
-            Logger::log('Zap request processed successfully: ID=' . $insert_id . ', Amount=' . $amount . ', Payment Hash=' . $invoice['payment_hash'], 'info');
+            Logger::log('Zap request processed successfully: Amount=' . $amount . ', Payment Hash=' . $invoice['payment_hash'], 'info');
 
             wp_send_json(array(
                 'pr' => $invoice['payment_request'],
@@ -98,9 +95,5 @@ class ZapRequestHandler {
         }
 
         return true;
-    }
-
-    public function store_zap_request($zap_request_data) {
-        $this->database_manager->insert_zap_request($zap_request_data);
     }
 }

@@ -5,12 +5,20 @@ use Elliptic\EC;
 class NostrEventHandler {
     private $nostr_private_key;
     private $nostr_public_key;
+    private $relays;
     private $ec;
 
     public function __construct() {
-        $this->nostr_private_key = get_option('lnurlp_nostr_zap_handler_nostr_private_key');
-        $this->nostr_public_key = get_option('lnurlp_nostr_zap_handler_nostr_public_key');
         $this->ec = new EC('secp256k1');
+    }
+
+    public function set_keys($private_key, $public_key) {
+        $this->nostr_private_key = $private_key;
+        $this->nostr_public_key = $public_key;
+    }
+
+    public function set_relays($relays) {
+        $this->relays = $relays;
     }
 
     public function create_zap_receipt_event($zap_request, $payment_hash) {
@@ -36,9 +44,7 @@ class NostrEventHandler {
     }
 
     public function publish_event_to_relays($event) {
-        $relays = get_option('lnurlp_nostr_zap_handler_nostr_relays', array());
-
-        foreach ($relays as $relay_url) {
+        foreach ($this->relays as $relay_url) {
             $this->publish_to_relay($relay_url, $event);
         }
     }
