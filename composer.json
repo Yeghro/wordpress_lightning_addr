@@ -1,0 +1,30 @@
+{
+    "name": "user/lnurl_lightning_address",
+    "description": "LNURLP Nostr Zap Handler WordPress Plugin",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "User\\LnurlLightningAddress\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Yeghro",
+            "email": "130201060+Yeghro@users.noreply.github.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "simplito/elliptic-php": "^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "10up/wp_mock": "^0.4.2",
+        "mockery/mockery": "^1.5",
+        "php-mock/php-mock-phpunit": "^2.6"
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}
