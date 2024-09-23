@@ -29,17 +29,24 @@ class ZapRequestHandler {
     }
 
     public function handle_zap_request() {
-        check_ajax_referer('zap_request_nonce', 'nonce');
         $amount = isset($_POST['amount']) ? intval($_POST['amount']) : 0;
-        $nostr_event = isset($_POST['nostr']) ? sanitize_text_field($_POST['nostr']) : '';
-
+        $nostr_event = isset($_POST['nostr']) ? stripslashes($_POST['nostr']) : '';
+        
+        Logger::log('Received zap request. Amount: ' . $amount . ', Nostr event: ' . $nostr_event, 'info');
+        
         if ($amount <= 0 || empty($nostr_event)) {
             Logger::log('Invalid zap request: Amount=' . $amount . ', Nostr event=' . ($nostr_event ? 'present' : 'missing'), 'error');
             wp_send_json_error('Invalid zap request: Amount must be greater than 0 and Nostr event must be provided');
         }
 
-        if (!$this->validate_zap_request($nostr_event)) {
-            Logger::log('Invalid Nostr event: ' . $nostr_event, 'error');
+        $event = json_decode($nostr_event, true);
+        if (!$event) {
+            Logger::log('Invalid JSON in Nostr event: ' . json_last_error_msg(), 'error');
+            wp_send_json_error('Invalid Nostr event: The provided event is not valid JSON. Error: ' . json_last_error_msg());
+        }
+
+        if (!$this->validate_zap_request($event)) {
+            Logger::log('Invalid Nostr event: ' . json_encode($event), 'error');
             wp_send_json_error('Invalid Nostr event: The provided event does not meet the required format or signature');
         }
 
@@ -73,18 +80,18 @@ class ZapRequestHandler {
         }
     }
 
-    public function validate_zap_request($nostr_event) {
-        $event = json_decode($nostr_event, true);
+    public function validate_zap_request($event) {
+        Logger::log('Validating Nostr event: ' . json_encode($event), 'info');
         
-        if (!$event || !isset($event['id']) || !isset($event['pubkey']) || !isset($event['created_at']) || !isset($event['kind']) || !isset($event['tags']) || !isset($event['content']) || !isset($event['sig'])) {
-            Logger::log('Invalid Nostr event structure', 'error');
+        if (!isset($event['id']) || !isset($event['pubkey']) || !isset($event['created_at']) || !isset($event['kind']) || !isset($event['tags']) || !isset($event['content']) || !isset($event['sig'])) {
+            Logger::log('Invalid Nostr event structure: ' . json_encode($event), 'error');
             return false;
         }
 
         // Verify event ID
         $calculated_id = $this->nostr_event_handler->calculate_event_id($event);
         if ($calculated_id !== $event['id']) {
-            Logger::log('Invalid Nostr event ID', 'error');
+            Logger::log('Invalid Nostr event ID. Calculated: ' . $calculated_id . ', Provided: ' . $event['id'], 'error');
             return false;
         }
 
@@ -94,6 +101,7 @@ class ZapRequestHandler {
             return false;
         }
 
+        Logger::log('Nostr event validation successful', 'info');
         return true;
     }
 }

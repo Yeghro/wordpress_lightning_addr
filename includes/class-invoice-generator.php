@@ -15,6 +15,7 @@ class InvoiceGenerator {
     }
 
     public function generate_invoice($amount, $memo) {
+        Logger::log("Generating invoice with API URL: {$this->api_url} and API Key: {$this->api_key}", 'info');
         $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
         $memo = sanitize_text_field($memo);
 

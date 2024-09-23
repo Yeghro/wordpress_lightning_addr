@@ -62,7 +62,8 @@ if (!class_exists('LNURLPNostrZapHandler')) {
         }
 
         private function setup_hooks() {
-            // Implementation here
+            add_action('wp_ajax_zap_request', array($this->zap_request_handler, 'handle_zap_request'));
+            add_action('wp_ajax_nopriv_zap_request', array($this->zap_request_handler, 'handle_zap_request'));
         }
     }
 }

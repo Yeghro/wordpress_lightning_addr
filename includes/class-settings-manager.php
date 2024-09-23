@@ -16,7 +16,7 @@ class SettingsManager {
         register_setting('lnurlp_nostr_zap_handler_options', 'lnurlp_nostr_zap_handler_lnbits_api_key');
         register_setting('lnurlp_nostr_zap_handler_options', 'lnurlp_nostr_zap_handler_nostr_private_key');
         register_setting('lnurlp_nostr_zap_handler_options', 'lnurlp_nostr_zap_handler_nostr_public_key');
-        register_setting('lnurlp_nostr_zap_handler_options', 'lnurlp_nostr_zap_handler_nostr_relays');
+        register_setting('lnurlp_nostr_zap_handler_options', 'lnurlp_nostr_zap_handler_nostr_relays', array($this, 'sanitize_relays'));
     }
 
     public function render_settings_page() {
@@ -47,13 +47,27 @@ class SettingsManager {
                     </tr>
                     <tr valign="top">
                         <th scope="row">Nostr Relays (comma-separated)</th>
-                        <td><input type="text" name="lnurlp_nostr_zap_handler_nostr_relays" value="<?php echo esc_attr(implode(',', get_option('lnurlp_nostr_zap_handler_nostr_relays', array()))); ?>" /></td>
+                        <td><input type="text" name="lnurlp_nostr_zap_handler_nostr_relays" value="<?php echo esc_attr($this->get_relays_as_string()); ?>" /></td>
                     </tr>
                 </table>
                 <?php submit_button(); ?>
             </form>
         </div>
         <?php
+    }
+
+    private function get_relays_as_string() {
+        $relays = get_option('lnurlp_nostr_zap_handler_nostr_relays', array());
+        if (is_string($relays)) {
+            // If it's already a string, return it as is
+            return $relays;
+        } elseif (is_array($relays)) {
+            // If it's an array, implode it
+            return implode(',', $relays);
+        } else {
+            // If it's neither, return an empty string
+            return '';
+        }
     }
 
     public function get_setting($key, $default = '') {
@@ -71,7 +85,7 @@ class SettingsManager {
             'nostr_private_key' => $this->get_setting('nostr_private_key', ''),
             'nostr_public_key' => $this->get_setting('nostr_public_key', ''),
             'webhook_secret' => $this->get_setting('webhook_secret', $this->generate_random_string(32)),
-            'nostr_relays' => $this->get_setting('nostr_relays', ['wss://relay.damus.io', 'wss://nostr-pub.wellorder.net']),
+            'nostr_relays' => $this->sanitize_relays($this->get_setting('nostr_relays', ['wss://relay.damus.io', 'wss://nostr-pub.wellorder.net'])),
         ];
     }
 
@@ -83,5 +97,18 @@ class SettingsManager {
             $randomString .= $characters[rand(0, $charactersLength - 1)];
         }
         return $randomString;
+    }
+
+    public function sanitize_relays($input) {
+        if (is_string($input)) {
+            // If it's a string, split it into an array
+            return array_map('trim', explode(',', $input));
+        } elseif (is_array($input)) {
+            // If it's already an array, return it as is
+            return $input;
+        } else {
+            // If it's neither, return an empty array
+            return array();
+        }
     }
 }
